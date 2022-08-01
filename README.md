@@ -5,10 +5,11 @@ capital stock estimates are calculated and allows users to examine the impacts o
 
 ## Prerequisites 
 
-To produce capital stocks estimates it is necessary to have R installed on your PC, the listed packages, capital stocks R scripts, and a set of spreadsheet [inputs](https://www.ons.gov.uk/releases/introducingthecapitalstocksuserguide). 
+To produce capital stocks estimates it is necessary to have R installed on your PC, the listed packages, capital stocks R scripts, and a set of [spreadsheet inputs](https://www.ons.gov.uk/releases/introducingthecapitalstocksuserguide).
 
-The capital stocks system runs using R ***version 3.4.0*** (2017), we are looking to provide scripts and packages that will run on the latest version of R shortly.
-To run the capital stocks code requires the following packages which are compatible with R version 3.4.0:
+The capital stocks system is compatible with R ***version 4.2.1*** (2022). Scripts and packages compatible with version 3.4.0 are available [here](https://github.com/ONSdigital/Capstocks_previous).
+
+To run the capital stocks code requires the following packages:
 
 - dplyr 
 - readr 
@@ -25,13 +26,14 @@ To run the capital stocks code requires the following packages which are compati
 
 Alongside the above packages, the following capital stock packages are needed: 
 
-- [capstock](https://github.com/ONSdigital/Capstock_package) 
-- [pimIO](https://github.com/ONSdigital/PimIO_package) 
+- [capstock](https://github.com/ONSdigital/Capstock_package)
+- [pimIO](https://github.com/ONSdigital/PimIO_package)
 - [prepim](https://github.com/ONSdigital/Prepim_package)
+- [pimir](https://github.com/ONSdigital/Pimir_package)
 
-To add these packages to your library simply copy the above folders into your R library folder.
+To add these packages to your library simply copy the above folders into your R library, so that you have a capstock, pimIO, prepim and pimir folder in your library.
 
-The following R scripts are required: 
+The following R scripts from this repository are required: 
 
 - Aggall.R 
 - Aggregate.R 
@@ -44,15 +46,24 @@ The following R scripts are required:
 - Run_pim.R 
 - Unchain.R 
 
+The following [spreadsheets](https://www.ons.gov.uk/economy/nationalaccounts/uksectoraccounts/methodologies/capitalstocksuserguideuk) are required:
+
+- piminput.xlsx
+- cvmcoveragetable.xlsx
+- hierarchiessectorindustryasset.xlsx
+- splitcofog.xlsx
+
 ## Running capital stock system 
 
-The capital stocks R scripts should be saved in the same folder. ‘Produce capital stock estimates.R’ requires the user to input three parameters: 
+The capital stocks R scripts should be saved in the same folder. ‘Produce capital stock estimates.R’ requires the user to input three parameters, so it will be
+necessary to open the file and add the following locations at the top of the R script: 
 
-- inputDir – the location of input data spreadsheets. For example: *inputDir <- “C:/Capital stock”* 
+- inputDir – the location of input data spreadsheets. For example: *inputDir <- “C:/Capital stock/”* 
 - scriptsPath - the location of capital stocks R scripts 
-- libraryPath – the location of the library containing the appropriate packages
+- libraryPath – the location of the library containing the appropriate packages. This can be left blank if you do not 
 
-With these parameters set, running ‘Produce capital stock estimates.R’ will call the other scripts, producing estimates of capital for the given input parameters. 
+With these parameters set, running all the lines of code in ‘Produce capital stock estimates.R’ will call the other scripts, producing estimates of capital for the
+given input parameters. 
 
 A set of input spreadsheets are published in the [article](https://www.ons.gov.uk/releases/introducingthecapitalstocksuserguide), which provides further details on the production of capital stocks estimates and starting at the end of 2022 these will be published
 alongside our bi-annual publications of capital stock. Changing values in the spreadsheets will enable the calculation of capital stock estimates under different
@@ -62,16 +73,20 @@ are included in these spreadsheets and then ‘R scripts’ describes how estima
 To specify where you want outputs written to, add the address of the directory under 'outputDir' in the 'Run_parameters' worksheet in PIM_input.xlsx.
 
 If a user only wants to change a specific set of assumptions, only the relevant worksheets need altering. For example, with life lengths the user might want to
-change estimates of mean, maximum life length and perhaps coefficient of variation. 
+change estimates of mean, maximum life length and perhaps coefficient of variation. Most asset life lengths were reviewed in 2019 and further information on how
+they were estimated in this [methodology article](https://www.ons.gov.uk/economy/nationalaccounts/uksectoraccounts/articles/nationalaccountsarticles/changestothecapitalstockestimationmethodsforbluebook2019).
 
 If a user wants to forecast future estimates of capital on a consistent basis to existing estimates, the following steps need to be completed in the PIM input
 spreadsheet: 
 
 - If chained estimates are required, update ‘toChainTo’ in the ‘run_parameters’ worksheet with the period that chained estimates are required up to. 
 
-- Forecasted estimates of GFCF and price indices are required. There are numerous series so the user might want to use some code to apply growth rates across a range of series. 
+- Forecasted estimates of 'GFCF_CP' and 'Price_index' are required. The headings for future quarters need to be in the format 'Y2025Q1' and all quarters will need
+to have estimates. There are numerous series so the user might want to use some code or Excel formula to apply growth rates across a range of series. 
 
-- Future estimates of life lengths are required. If these are not set the latest life length parameters will be carried forward. 
+- Future estimates of life lengths are required. If these are not set the latest life length parameters will be carried forward.
+
+To produce capital estimates all the lines in 'Produce capital stock estimates.R' need to be run. It can take a couple of hours to produce estimates of capital.
 
 ## Input Spreadsheets 
 
@@ -342,11 +357,12 @@ Another rds file is written containing estimates after reclassifications have be
 
 ### Aggregate 
 
-For classifications of functions of government (COFOGs) allocated to two standard industry classifications (SIC), these are split into COFOG series, which are mapped to their respective SICs. 
+For classifications of functions of government (COFOGs) allocated to two standard industry classifications (), these are split into COFOG series, which are 
+mapped to their respective SICs. 
 
-In some instances negative estimates of capital stock can be produced. Given that it is not possible to have negative estimates of capital stock these are set to zero.
-Negative estimates can occur due to either mismeasurement of GFCF, deflators, or incorrect assumptions (for example asset lives). We are currently investigating
-instances of negative capital stock and are looking to identify the cause of these negative values so that the relevant series can be corrected. 
+In some instances negative estimates of capital stock can be produced. Given that it is not possible to have negative estimates of capital stock these are set to 
+zero. Negative estimates can occur due to either mismeasurement of GFCF, deflators, or incorrect assumptions (for example asset lives). We are currently 
+investigating instances of negative capital stock and are looking to identify the cause of these negative values so that the relevant series can be corrected. 
 
 Estimates of capital consumption for cultivated assets are set to zero in line with 3.140 of the [European System of Accounts 2010](https://ec.europa.eu/eurostat/documents/3859598/5925693/KS-02-13-269-EN.PDF/44cd9d01-bc64-40e5-bd40-d17df0c69334). 
 
@@ -356,10 +372,22 @@ The estimates at this stage are all at the same level of detail as the GFCF seri
 
 This script produces chained volume estimates for selected series: further details about chaining can be found in a [methodology article on chain-linking](https://www.ons.gov.uk/economy/nationalaccounts/uksectoraccounts/methodologies/chainlinkingmethodsusedwithintheuknationalaccounts#unchaining). 
 
-The chained volume measures (CVMs) produced will slightly differ from published estimates, as currently published estimates are rounded prior to chaining. Our
-capital stocks publication for 2022 will round after chaining.   
+Both annual and quarterly CVM estimates are calculated for selected series.
 
-Both annual and quarterly estimates for selected series are written into csv files.
+## Outputs
+
+Annual and quarterly estimates of net capital stock, gross capital stock and capital consumption are produced.
+
+Estimates for the outputs of the PIM are also saved, along with the PIM outputs after taking into account reclassifications. These provide details of each series
+broken down by sector, asset and industry.
+
+The outputs from the PIM input file will differ from published estimates of capital stock, given the PIM input file aggregates weapons systems and other machinery 
+and equipment.
+
+There are also some small differences in published current price estimates for land imporvements that we are currently investigating and looking to rectify.
+
+Estimates for CVM's may differ due to rounding at different stages and using a different function to benchmark quarterly to annual estimates. We will look to align 
+these estimates in future.
 
 ## Questions 
 

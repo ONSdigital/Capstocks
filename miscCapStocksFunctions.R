@@ -11,7 +11,7 @@ annualiseData <- function(dat)
 
   namesToRemove <- c("Sector", "Industry", "Asset", "Measure", "Period" )
   requiredVariables <- c(names(dat) [! names(dat) %in% namesToRemove])
-  dat <- dat %>% gather_(key = "Measure", value = "Value", requiredVariables)
+  dat <- dat %>% gather(key = Measure, value = Value, requiredVariables)
 
   dat$Value <- round(dat$Value,0)
 
@@ -44,7 +44,7 @@ annualiseData <- function(dat)
 
   # Get Quarter 4 figures for all Measures and years and filter out measures not needed
   anQtr <- dat[grepl('Q4', dat$Period, fixed=TRUE),] %>%
-    select(Sector, Industry, Asset, as.numeric(Period), Measure, Year, Value) %>%
+    select(Sector, Industry, Asset, Measure, Year, Value) %>%
     filter(Measure %in% varsThatNeedQ4ForAnnual) %>%
     filter(!(Measure %in% c('PriceIndex')))
 
@@ -73,7 +73,7 @@ annualiseData <- function(dat)
   # Get Annualised Data, only variables that need all 4 Qtrs averaged
 
   # Average all quarters for each year and measure and filter out measures not needed
-  anAvg <- dat %>% select(Sector, Industry, Asset, as.numeric(Period), Measure, Year, Value) %>%
+  anAvg <- dat %>% select(Sector, Industry, Asset, Measure, Year, Value) %>%
     group_by(Sector, Industry, Asset, Measure, Year) %>%
     summarise(Value = mean(Value)) %>%
     filter(Measure == 'PriceIndex')
@@ -154,25 +154,25 @@ chainDataSkippingErrors <- function(cDat, benchType = 4, refYear, correct_CVM)
 
        # ----------------------- Chain all CYP/PYP Pairs -------------------------------
        # chainAll expects Sector/Industry/Asset labels and all data nested as "data"
-       toChain2 <- toChain2 %>% group_by(Sector, Industry, Asset) %>% nest(.key = data)
+       toChain2 <- toChain2 %>% group_by(Sector, Industry, Asset) %>% nest() %>% ungroup()
 
        if (nrow(toChain2) > 0)
        {
          #flog.info(paste0("Loop: ", toString(i), "/", toString(nrow(theGroups)), " - ", "Starting chain of Group: ", theGroups[i,1], " - Number of Rows: ", theGroups[i,2]))
           flog.info(paste0("Loop: ", toString(i), "/", toString(nrow(theGroups)), " - ", "Starting chain of Sector: ", theGroups[i,1], " - Number of Rows: ", theGroups[i,2]))
-         
+
          if (correct_CVM==TRUE){
-           
-          chained <- capstock::chainAll(toChain2, pairs = pairs, lastCompleteYear = lastCompleteYear, parallelise = TRUE, benchType)
-           
+
+          chained <- capstock::chainAll(toChain2, pairs = pairs, lastCompleteYear = lastCompleteYear, parallelise = FALSE, benchType)
+
          }
 
          if (correct_CVM==FALSE){
-           
+
            chained <- capstock::chainAll_old(toChain2, pairs = pairs, lastCompleteYear = refYear, parallelise = TRUE, benchType)
-           
+
          }
-         
+
          cat("\n")
          flog.info("Chain complete.")
 
@@ -797,98 +797,98 @@ checkLLCoverage <- function(llfile, toCover, varName){
   al <- llfile
   expectedColumns <- c("Sector", "Industry", "Asset")
   if (!all(expectedColumns %in% colnames(al))) {
-    msg <- paste("Life lengths sheet must contain columns", 
+    msg <- paste("Life lengths sheet must contain columns",
                  paste(expectedColumns, collapse = ", "))
     flog.fatal(msg)
     stop(msg)
   }
-  if (ncol(Filter(is.character, al[expectedColumns])) < 3) 
+  if (ncol(Filter(is.character, al[expectedColumns])) < 3)
     stop("Sector, Industry, and Asset columns must be character data.")
   flog.info("Left-padding Industry codes with zero if required.")
   al <- mutate(al, Industry = formatIndustryCodes(Industry))
-  toCover <- toCover %>% select(Sector, Industry, Asset) %>% 
+  toCover <- toCover %>% select(Sector, Industry, Asset) %>%
     distinct()
-  allSec <- data.frame(Sector = unique(toCover$Sector), join = 1, 
+  allSec <- data.frame(Sector = unique(toCover$Sector), join = 1,
                        stringsAsFactors = FALSE)
-  allInd <- data.frame(Industry = unique(toCover$Industry), 
+  allInd <- data.frame(Industry = unique(toCover$Industry),
                        join = 1, stringsAsFactors = FALSE)
-  allAss <- data.frame(Asset = unique(toCover$Asset), join = 1, 
+  allAss <- data.frame(Asset = unique(toCover$Asset), join = 1,
                        stringsAsFactors = FALSE)
   allKeys <- c("Sector", "Industry", "Asset")
-  specRows <- inner_join(al, toCover, by = c("Sector", "Industry", 
+  specRows <- inner_join(al, toCover, by = c("Sector", "Industry",
                                              "Asset"))
-  indToEx <- filter(al, Industry == "ALL", Sector != "ALL", 
+  indToEx <- filter(al, Industry == "ALL", Sector != "ALL",
                     Asset != "ALL")
   indToEx <- mutate(indToEx, Industry = NULL)
-  indExpanded <- left_join(mutate(indToEx, join = 1), allInd, 
+  indExpanded <- left_join(mutate(indToEx, join = 1), allInd,
                            by = "join") %>% mutate(join = NULL)
-  indExpanded <- indExpanded %>% semi_join(toCover, by = allKeys) %>% 
-    anti_join(specRows, by = allKeys) %>% select(Sector, 
+  indExpanded <- indExpanded %>% semi_join(toCover, by = allKeys) %>%
+    anti_join(specRows, by = allKeys) %>% select(Sector,
                                                  Industry, Asset, everything())
-  secToEx <- filter(al, Industry != "ALL", Sector == "ALL", 
+  secToEx <- filter(al, Industry != "ALL", Sector == "ALL",
                     Asset != "ALL")
   secToEx <- mutate(secToEx, Sector = NULL)
-  secExpanded <- left_join(mutate(secToEx, join = 1), allSec, 
+  secExpanded <- left_join(mutate(secToEx, join = 1), allSec,
                            by = "join") %>% mutate(join = NULL)
-  secExpanded <- secExpanded %>% semi_join(toCover, by = allKeys) %>% 
-    anti_join(specRows, by = allKeys) %>% select(Sector, 
+  secExpanded <- secExpanded %>% semi_join(toCover, by = allKeys) %>%
+    anti_join(specRows, by = allKeys) %>% select(Sector,
                                                  Industry, Asset, everything())
   specRows <- bind_rows(specRows, indExpanded, secExpanded)
-  secIndToEx <- filter(al, Industry == "ALL", Sector == "ALL", 
+  secIndToEx <- filter(al, Industry == "ALL", Sector == "ALL",
                        Asset != "ALL")
   secIndToEx <- mutate(secIndToEx, Sector = NULL, Industry = NULL)
   secIndExpanded <- secIndToEx %>% left_join(toCover, by = "Asset")
-  secIndExpanded <- secIndExpanded %>% anti_join(specRows, 
+  secIndExpanded <- secIndExpanded %>% anti_join(specRows,
                                                  by = allKeys) %>% select(Sector, Industry, Asset, everything())
   finalSpec <- bind_rows(specRows, secIndExpanded)
-  finalSpec <- finalSpec %>% gather(Period, Value, -Sector, 
-                                    -Industry, -Asset) %>% rename_(.dots = setNames("Value", 
-                                                                                    varName))
+  finalSpec <- finalSpec %>% gather(Period, Value, -Sector,
+                                    -Industry, -Asset)
+  finalSpec <- finalSpec %>% rename(!!varName := Value)
   return(finalSpec)
-  
-  
+
+
 }
 
 #######################################################################################################################################################################
 #######################################################################################################################################################################
 
-joinLifeLengths <- function (gfcf, lifeAverage, lifeMax, lifeMin, lifeCov) 
+joinLifeLengths <- function (gfcf, lifeAverage, lifeMax, lifeMin, lifeCov)
 {
   flog.info("\nAdding life lengths.")
   jk <- c("Sector", "Industry", "Asset", "Period")
   flog.info("Reading AverageLifeLengths sheet.")
-  lifeAverage <- checkLLCoverage(AverageLifeLengths, toCover = as.data.frame(gfcf), 
+  lifeAverage <- checkLLCoverage(AverageLifeLengths, toCover = as.data.frame(gfcf),
                                  varName = "Average")
   flog.info("Reading CoVs sheet.")
-  lifeCov <- checkLLCoverage(CoVs, toCover = as.data.frame(gfcf), 
+  lifeCov <- checkLLCoverage(CoVs, toCover = as.data.frame(gfcf),
                              varName = "CoV")
   flog.info("Reading Max sheet.")
-  lifeMax <- checkLLCoverage(Max, toCover = as.data.frame(gfcf), 
+  lifeMax <- checkLLCoverage(Max, toCover = as.data.frame(gfcf),
                              varName = "Max")
   flog.info("Reading Min sheet.")
-  lifeMin <- checkLLCoverage(Min, toCover = as.data.frame(gfcf), 
+  lifeMin <- checkLLCoverage(Min, toCover = as.data.frame(gfcf),
                              varName = "Min")
   flog.info("Combining life lengths datasets.")
   LL <- left_join(lifeAverage, lifeCov, by = jk)
   LL <- left_join(LL, lifeMax, by = jk)
   LL <- left_join(LL, lifeMin, by = jk)
-  gfcf_no_ll <- anti_join(gfcf, LL, by = c("Sector", "Industry", 
+  gfcf_no_ll <- anti_join(gfcf, LL, by = c("Sector", "Industry",
                                            "Asset", "Period"))
   flog.info("Checking GFCF and life length specification coverage.")
   if (nrow(gfcf_no_ll) > 0) {
-    flog.error("Missing life lengths for series:", as.data.frame(getSeries(gfcf_no_ll)), 
+    flog.error("Missing life lengths for series:", as.data.frame(getSeries(gfcf_no_ll)),
                capture = TRUE)
     stop("Missing life length coverage.")
   }
   flog.info("Joining life lengths to GFCF.")
-  gfcf <- left_join(gfcf, LL, by = c("Sector", "Industry", 
+  gfcf <- left_join(gfcf, LL, by = c("Sector", "Industry",
                                      "Asset", "Period"))
-  gfcf_na <- dplyr::select(gfcf, one_of(c(jk, "Average", "CoV", 
+  gfcf_na <- dplyr::select(gfcf, one_of(c(jk, "Average", "CoV",
                                           "Max", "Min")))
-  gfcf_na <- dplyr::filter(gfcf_na, is.na(Average) | is.na(CoV) | 
+  gfcf_na <- dplyr::filter(gfcf_na, is.na(Average) | is.na(CoV) |
                              is.na(Max) | is.na(Min))
   if (nrow(gfcf_na) > 0) {
-    flog.warn("NA life lengths produced for series:", as.data.frame(getSeries(gfcf_no_ll)), 
+    flog.warn("NA life lengths produced for series:", as.data.frame(getSeries(gfcf_no_ll)),
               capture = TRUE)
     warning("There was a problem with joining the life lengths. NAs were produced.")
   }

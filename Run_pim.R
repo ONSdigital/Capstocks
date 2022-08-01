@@ -31,7 +31,7 @@ out <- select(out, -data, -config)
 # Rename columns to match standard format of "CP" and "CVM" at the end of names
 # Some CVM output cols are not labelled as such
 # Rename Vintage to Period now that PIM is finished
-out <- out %>% unnest() %>%
+out <- out %>% unnest(cols = c(result)) %>%
   rename(GrossStockCVM = GrossStock,
          NetStockCVM = NetStock,
          ProductiveStockCVM = ProductiveStock,
@@ -47,7 +47,7 @@ out <- out %>%
 # Re-nest the output for onward processing
 out <- out %>% 
   group_by(Sector, Industry, Asset) %>%
-  nest(.key = data)  # unchainAll expects data to be in "data" list-column
+  nest()  # unchainAll expects data to be in "data" list-column
 
 # Save entire output dataset
 

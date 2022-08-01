@@ -2,7 +2,7 @@
 
   # Specify input directory
 
-inputDir <- "" # Location of inputs (e.g. "C:/Capital stock/")
+inputDir <- ""
 
 # Specify location of R scripts
 
@@ -17,9 +17,9 @@ libraryPath <- ""
 # Ensure wd in correct format
 
 if (substr(scriptsPath,nchar(scriptsPath),nchar(scriptsPath))!="/"){
-  
+
   scriptsPath <- paste0(scriptsPath,"/")
-  
+
 }
 
 setwd(scriptsPath)
@@ -27,9 +27,9 @@ setwd(scriptsPath)
 # Set library path if specified
 
 if (libraryPath!=""){
-  
+
   .libPaths(libraryPath)
-  
+
 }
 
 # Read in libraries
@@ -42,6 +42,7 @@ library(readxl)
 library(testthat)
 library(tibble)
 library(tidyr)
+library(tempdisagg)
 # Capstock packages
 library(capstock)
 library(pimIO)

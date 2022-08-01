@@ -4,7 +4,7 @@
 # systems to weapons - this is now incorrectly
 # described, but will not be included in outputs
 
-out$Asset[out$Asset=="OTH.MACH.WEAP"] <- "WEAPONS" 
+out$Asset[out$Asset=="OTH.MACH.WEAP"] <- "WEAPONS"
 
 # Read in Sector/Industry/Asset hierarchies
 # Aggregate to all Sector/Industry/Asset hierarchies
@@ -18,39 +18,39 @@ out$Asset[out$Asset=="OTH.MACH.WEAP"] <- "WEAPONS"
 source("bespokeDataCalculations.R")
 
 # UNNEST DATA
-out <- unnest(out)
 
 # Split relevant S.13 COFOG's
-indSplit <- read_excel(paste0(inputDir, "split_COFOG.xlsx"), sheet = "split_COFOG", col_types = "text") # PULL IN THE SPLITS FROM THE SPREADSHEET
-#indSplit <- read.csv(paste0(inputDir, "split_COFOG.csv"), stringsAsFactors=FALSE) 
+indSplit <- read_excel(paste0(inputDir, "splitcofog.xlsx"), sheet = "split_COFOG", col_types = "text") # PULL IN THE SPLITS FROM THE SPREADSHEET
 toSplit <- unique(paste0(indSplit$Sector,indSplit$Industry))
 indSplit <- indSplit %>% gather(key = 'Period', value = "Perc", 4:ncol(indSplit))
 indSplit$Perc <- as.numeric(indSplit$Perc)
 
-notSplit <- filter(out, !paste0(out$Sector,out$Industry) %in% toSplit)
-split <- filter(out, paste0(out$Sector,out$Industry) %in% toSplit)
+out$concat <- paste0(out$Sector,out$Industry)
+notSplit <- filter(out, !concat %in% toSplit)
+split <- filter(out, concat %in% toSplit)
 split <- left_join(split,indSplit)
 
 splitNew <- split
 splitNew$Industry <- splitNew$toIndustry
 
-applySplit <- c( "gfcf_ociv",                    "GrossStockCVM",                "NetStockCVM",                 
+applySplit <- c( "gfcf_ociv",                    "GrossStockCVM",                "NetStockCVM",
                  "ProductiveStockCVM",           "TotalChangesInVolumeCVM",      "TotalOtherChangesInVolumeCVM",
-                 "TotalOtherChangesInVolumeCP",  "ConsumptionOfFixedCapitalCVM", "NetFixedCapitalFormationCVM", 
-                 "GrossStockCP",                 "NetStockCP",                   "ProductiveStockCP",           
-                 "TotalChangesInVolumeCP",       "ConsumptionOfFixedCapitalCP",  "NetFixedCapitalFormationCP",  
-                 "NominalHoldingGL",             "RealHoldingGL",                "NeutralHoldingGL",            
+                 "TotalOtherChangesInVolumeCP",  "ConsumptionOfFixedCapitalCVM", "NetFixedCapitalFormationCVM",
+                 "GrossStockCP",                 "NetStockCP",                   "ProductiveStockCP",
+                 "TotalChangesInVolumeCP",       "ConsumptionOfFixedCapitalCP",  "NetFixedCapitalFormationCP",
+                 "NominalHoldingGL",             "RealHoldingGL",                "NeutralHoldingGL",
                  "CapitalServicesCYP",           "CapitalServicesPYP",           "ConsumptionOfFixedCapitalCYP",
-                 "ConsumptionOfFixedCapitalPYP", "GrossStockCYP",                "GrossStockPYP",               
-                 "NetStockCYP",                  "NetStockPYP",                  "ProductiveStockCYP",          
+                 "ConsumptionOfFixedCapitalPYP", "GrossStockCYP",                "GrossStockPYP",
+                 "NetStockCYP",                  "NetStockPYP",                  "ProductiveStockCYP",
                  "ProductiveStockPYP" )
 
 for (i in applySplit){
   splitNew[i] <- split[i]*split$Perc
   split[i] <- split[i]*(1-split$Perc)
 }
-splitNew[ ,c('toIndustry', 'Perc')] <- list(NULL)
-split[ ,c('toIndustry', 'Perc')] <- list(NULL)
+splitNew[ ,c('toIndustry', 'Perc', 'concat')] <- list(NULL)
+split[ ,c('toIndustry', 'Perc', 'concat')] <- list(NULL)
+notSplit$concat <- NULL
 out <- rbind(notSplit,split,splitNew)
 rm(notSplit, split, splitNew,i)
 
@@ -81,9 +81,6 @@ out$ConsumptionOfFixedCapitalCVM [ out$Asset=="CULTIVATED" ] <- 0
 out$ConsumptionOfFixedCapitalPYP [ out$Asset=="CULTIVATED" ] <- 0
 out$ConsumptionOfFixedCapitalCYP [ out$Asset=="CULTIVATED" ] <- 0
 
-# NEST DATA BACK UP BY Sector, Indsutry and Asset
-out <- out %>% group_by(Sector, Industry, Asset) %>% nest(.key = "data")
-
 #################################################################################################################################################################
 #################################################################################################################################################################
 #################################################################################################################################################################
@@ -92,7 +89,7 @@ out <- out %>% group_by(Sector, Industry, Asset) %>% nest(.key = "data")
 flog.info("Reading aggregation hierarchies.")
 # Note, to avoid category conflicts each hierarchy column should be unique across
 # the three hierarchies
-hierarchies <- paste0(inputDir, "hierarchies_sector_industry_asset.xlsx")
+hierarchies <- paste0(inputDir, "hierarchiessectorindustryasset.xlsx")
 secHier <- read_excel(hierarchies, sheet = "Sector", col_types = "text")
 indHier <- read_excel(hierarchies, sheet = "Industry", col_types = "text")
 assHier <- read_excel(hierarchies, sheet = "Asset", col_types = "text")
@@ -102,8 +99,6 @@ indHier <- as.data.frame(lapply(indHier, prepim::formatIndustryCodes), stringsAs
 indHier <- distinct(mutate(indHier, A88 = NULL))
 
 # ------------------- Aggregate All Hierarchies unrounded for chaining  --------------------------------
-
-out <- tidyr::unnest(out)
 
 # Aggregate CP variables and all CYP/PYP pairs
 # Specify variables to aggregate

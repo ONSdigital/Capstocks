@@ -17,7 +17,7 @@ if (substr(inputDir,nchar(inputDir),nchar(inputDir))!="/"){
 
 # Read in run parameters
 
-params <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),
+params <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
                     sheet = 'Run_parameters')
 
 toChainFrom <- params$toChainFrom # quarter to chain from
@@ -44,20 +44,20 @@ if (substr(outputDir,nchar(outputDir),nchar(outputDir))!="/"){
 
 # Read in GFCF and deflators, then combine
 
-gfcf <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),
+gfcf <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
                   sheet = 'GFCF_CP')
 
 
 
 # add columns
 
-AverageLifeLengths <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),sheet = 'AverageLifeLengths', col_types = "text")
+AverageLifeLengths <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'AverageLifeLengths', col_types = "text")
 
-CoVs <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),sheet = 'CoVs', col_types = "text")
+CoVs <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'CoVs', col_types = "text")
 
-Min <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),sheet = 'Min', col_types = "text")
+Min <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'Min', col_types = "text")
 
-Max <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),sheet = 'Max', col_types = "text")
+Max <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'Max', col_types = "text")
 
 
 add_columns <- function(dat){
@@ -87,7 +87,7 @@ gfcf <- gather(gfcf, Period, gfcfCP, 4:ncol(gfcf))
 
 #Add rows
 
-Other <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),sheet = 'Other', col_types = "text")
+Other <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'Other', col_types = "text")
 
 
 add_rows <- function(dat){
@@ -109,7 +109,7 @@ add_rows <- function(dat){
 Other <- add_rows(Other)
 ######################################################################
 
-deflators <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),
+deflators <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
                        sheet = 'Price_index')
 deflators <- gather(deflators, Period, PriceIndex, 4:ncol(deflators))
 gfcf <- left_join(gfcf, deflators, by = c('Sector', 'Industry', 'Asset', 'Period'))
@@ -131,14 +131,14 @@ gfcf$Min <- as.numeric(gfcf$Min)
 
 # Adjustments
 
-adjustments <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),
+adjustments <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
                          sheet = 'OCIV')
 gfcf <- left_join(gfcf, adjustments, by = c("Sector", "Industry", "Asset", "Period"))
 
 # Fill out K-values with zeros
 
 naToZero <- function(x) dplyr::if_else(is.na(x), 0, x)
-gfcf <- mutate_at(gfcf, .cols = c("K1CP", "K3CP", "K4CP", "K5CP", "K61CP", "K62CP"),
+gfcf <- mutate_at(gfcf, .vars = c("K1CP", "K3CP", "K4CP", "K5CP", "K61CP", "K62CP"),
                   .funs = naToZero)
 
 # Add other parameters
@@ -161,11 +161,12 @@ inputData <- gfcf %>%
   rename(Vintage = Period) %>%   # PIM refers to Periods as "Vintage"
   group_by(Sector, Industry, Asset) %>%
   # For each series, roll-up all columns into a single list-column called "data"
-  nest()
+  nest() %>%
+  ungroup()
 
 # Profiles
 
-configs <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),
+configs <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
                      sheet = 'Dep_ret_profiles')
 
 configs <- expandConfigSpec(configs, toCover = inputData, joinKeys = c("Asset", "Industry", "Sector"))

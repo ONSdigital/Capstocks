@@ -9,7 +9,7 @@
 if (!exists("out")) stop("No prepared out data.frame present. Did you run the previous script?")
 
 # ---------------- Select variables and write to CSV ---------------------------
-pimOutput <- unnest(out)
+pimOutput <- out %>% unnest(cols = c(data))
 
 # Save selected variables for output to CSV
 baseVariables <- c("Sector", "Industry", "Asset", "Period")

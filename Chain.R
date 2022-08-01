@@ -34,7 +34,7 @@ cols <- names(aggregated)
 
 ## REDUCE THE AGGREGATED DATA DOWN TO WHAT IS NEEDED USING THE COVERAGE TABLE IN AN EXCEL FILE IN THE INPUT FOLDER
 ## PULL IN THE COMBINATIONS OF SECTOR, INDUSTRY AND ASSET
-covTabStr <- paste0(inputDir, "CVM_coverage_table.xlsx")               # FILE PATH STRING
+covTabStr <- paste0(inputDir, "cvmcoveragetable.xlsx")               # FILE PATH STRING
 ##covTabStr <- paste0("Input/Mapping & Aggregation/TEST CVM_coverage_table.xlsx")             # FILE PATH STRING
 covTab <- read_excel(covTabStr, sheet = "CVM", col_types = "text")                           # OPEN THE FILE AND SELECT THE SHEET
 ## CREATE A NEW COLUMN THAT HOLDS A CONCATENATED STRING OF SECTOR, INDUSTRY AND ASSET
@@ -166,14 +166,14 @@ chainedUnnest <- sqldf("SELECT * FROM chainedUnnest GROUP BY Sector, Industry, A
 # Round at the lowest level for additive series and then aggregate
 
 for (m in measures){
-  
+
   out[m] <- round(out[m], 0)
-  
+
 }
 
 # Hierarchies
 
-hierarchies <- paste0(inputDir, "hierarchies_sector_industry_asset.xlsx")
+hierarchies <- paste0(inputDir, "hierarchiessectorindustryasset.xlsx")
 secHier <- read_excel(hierarchies, sheet = "Sector", col_types = "text")
 indHier <- read_excel(hierarchies, sheet = "Industry", col_types = "text")
 assHier <- read_excel(hierarchies, sheet = "Asset", col_types = "text")
@@ -206,7 +206,7 @@ aggregated_additive <- select(aggregated_additive, -Sector_Level,
                               -Industry_Level, -Asset_Level, -Series,
                               -Group, -coverage)
 aggregated_additiveAnnual <- annualiseData(aggregated_additive)
-# aggregated_additiveAnnual <- select(aggregated_additiveAnnual, -ConsumptionOfFixedCapitalCVM, 
+# aggregated_additiveAnnual <- select(aggregated_additiveAnnual, -ConsumptionOfFixedCapitalCVM,
 #                                     -NetStockCVM, -GrossStockCVM)
 aggregated_additive <- gather(aggregated_additive, "Measure", "Value", 5:ncol(aggregated_additive))
 

@@ -12,16 +12,16 @@
 
 ##### Remove any existing series of terminal costs and add terminal costs series ########
 
-out <- unnest(out)
+out <- out %>% unnest(cols = c(data))
 out <- filter(out, Asset!="TERMINAL")
 
 if (exists('terminal')){
   if (nrow(terminal)>0){
-    
-    terminal <- terminal %>% 
+
+    terminal <- terminal %>%
       rename(ConsumptionOfFixedCapitalCP = gfcfCP)
     terminal$ConsumptionOfFixedCapitalCVM <- terminal$ConsumptionOfFixedCapitalCP/terminal$PriceIndex
-    terminal <- select(terminal, Period, Sector, Industry, Asset, 
+    terminal <- select(terminal, Period, Sector, Industry, Asset,
                        ConsumptionOfFixedCapitalCVM, ConsumptionOfFixedCapitalCP, PriceIndex)
     terminal$gfcf_ociv <- terminal$ConsumptionOfFixedCapitalCP
     terminal$refYear <- refPeriod
@@ -40,15 +40,16 @@ if (exists('terminal')){
     terminal$NetFixedCapitalFormationCP <- 0
     terminal$CapitalServicesCP <- 0
     terminal$CapitalServicesCVM <- 0
-    terminal$Year <- substr(terminal$Period,2,5)
+    terminal$Year <- as.numeric(substr(terminal$Period,2,5))
     terminal$NominalHoldingGL <- 0
     terminal$RealHoldingGL <- 0
     terminal$NeutralHoldingGL <- 0
     terminal$ReturnToCapital <- 0
-    out <- rbind(out, terminal) 
-    
+    out <- rbind(out, terminal)
+
   }
 }
+
 
 # Set KP = CP for stocks in refYear
 
@@ -70,8 +71,8 @@ out$PI_Flow_adj <- NULL
 
 out <- out %>%
         group_by(Sector, Industry, Asset) %>%
-        nest(.key = "data")
-  
+        nest() %>% ungroup()
+
 #####################################################################
 
 if (!exists("out")) stop("No prepared out data.frame present. Did you run the previous script?")
@@ -95,7 +96,7 @@ refYear <- as.numeric(substr(refPeriod,2,5))
 
 flog.info("Starting unchain.")
 # Unchain using explicit deflator method
-out <- unchainAll(out, pairs = pairs, refYear = refYear)
+out <- unchainAll(out, pairs = pairs, refYear = refYear, parallelise = FALSE)
 cat("\n")
 flog.info("Unchain complete.")
 
@@ -111,10 +112,11 @@ if (sum(failures) > 0) {
 # Remove PriceIndex, no longer required and may get in the way of later data
 # aggregation (where we can't add Price Indexes together)
 # This will also combine the "data" and "unchained" cols into one "data" col
-out <- unnest(out) %>%
+out <- out %>% unnest(cols = c(data, unchained)) %>%
   select(-PriceIndex) %>%
   group_by(Sector, Industry, Asset) %>%
-  nest(.key = "data")
+  nest() %>%
+  ungroup
 
 
 # --------------------------- Reclassifications -------------------------------
@@ -122,10 +124,10 @@ out <- unnest(out) %>%
 # Reclassifications have to be performed after the PIM output is unchained since only then can the CVM values be added
 
 # Unnesting the PIM outputs
-out <- unnest(out)
+out <- out %>% unnest(cols = c(data))
 
 # Reading in the reclassifications file
-reclassifications <- read_xlsx(path = paste0(inputDir,"PIM_input.xlsx"),
+reclassifications <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
                         sheet = 'Reclassification')
 reclassifications$From_Industry <- as.character(reclassifications$From_Industry)
 reclassifications$From_Industry <- ifelse(nchar(reclassifications$From_Industry)==2,reclassifications$From_Industry,paste0("0",reclassifications$From_Industry))
@@ -250,13 +252,14 @@ out <- rbind(out,to_unchanged, new_to)
 
 #out$Measure <- gsub("CVM", "KP", out$Measure)
 
-out <- out %>%
+pimoutput <- out %>%
   group_by(Sector, Industry, Asset) %>%
-  nest(.key = "data")
+  nest() %>%
+  ungroup()
 
-write_rds(out, paste0(outputDir, "pimOutput_reclass_", runTime, ".Rds"))
+write_rds(pimoutput, paste0(outputDir, "pimOutput_reclass_", runTime, ".Rds"))
 
 # -------------------------- Remove Objects ------------------------------------
 rm(dataCols, pairs, failures, from, from_changed, from_unchanged, From_Asset, From_Industry, From_Sector, to, to_changed, to_unchanged,
-   To_Sector, merged, new_from, new_to, reclassifications, Re_Period, i, 
-   refYear)
+   To_Sector, merged, new_from, new_to, reclassifications, Re_Period, i,
+   refYear, pimoutput)
