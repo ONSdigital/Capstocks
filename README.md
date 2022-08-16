@@ -28,6 +28,8 @@ To run the capital stocks code requires the following packages:
 - assertr
 - tempdisagg
 - purrrlyr
+- data.table
+- forcats
 
 Alongside the above packages, the following capital stock packages are needed: 
 
