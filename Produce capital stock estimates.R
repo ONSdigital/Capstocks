@@ -56,6 +56,11 @@ library(cellranger)
 library(RSQLite)
 ##
 library(writexl)
+library(futile.logger)
+library(doSNOW)
+library(assertr)
+library(tempdisagg)
+library(purrrlyr)
 
 # Timestamp
 
