@@ -23,6 +23,11 @@ To run the capital stocks code requires the following packages:
 - cellranger 
 - RSQLite 
 - writexl
+- futile.logger
+- doSNOW
+- assertr
+- tempdisagg
+- purrrlyr
 
 Alongside the above packages, the following capital stock packages are needed: 
 
