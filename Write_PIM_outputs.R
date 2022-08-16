@@ -24,7 +24,7 @@ pimOutput <- pimOutput %>% select(one_of(c(baseVariables, requiredVariables)))
 
 # Gather up the variables under a new "Measure" column
 
-pimOutput <- pimOutput %>% gather_(key = "Measure", value = "Value", requiredVariables)
+pimOutput <- pimOutput %>% gather(key = "Measure", value = "Value", all_of(requiredVariables))
 
 # Round
 
