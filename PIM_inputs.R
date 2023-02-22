@@ -155,6 +155,23 @@ file.remove(paste0(inputDir, "series_tax_util_cpi_reshape.csv"))
 terminal <- filter(gfcf, Asset=="TERMINAL")
 gfcf <- filter(gfcf, Asset!="TERMINAL")
 
+# ------------------------ Add Reference Year ----------------------------------
+# Set the reference year (for calculation of Capital Services only)
+# Some stocks don't last until reference year so just use their max period
+
+flog.info("\nAdding Reference Year.")
+refYear <- params$refPeriod
+
+# Re-referencing deflators
+
+gfcf$year <- substr(gfcf$Period,2,5)
+
+gfcf <- gfcf %>% group_by(Sector,Industry,Asset) %>% mutate(adjustment = (sum(PriceIndex[as.numeric(year)==substr(refPeriod,2,5)]))/4)
+gfcf$PriceIndex <- gfcf$PriceIndex/gfcf$adjustment
+gfcf$adjustment <- NULL
+gfcf$year <- NULL
+gfcf <- ungroup(gfcf)
+
 # -------------------- Nest Series Ready for PIM -------------------------------
 
 inputData <- gfcf %>%
@@ -182,12 +199,6 @@ configs <- configs %>%
 inputData <- inputData %>% left_join(configs, by = c("Sector", "Industry", "Asset"))
 rm(configs)
 
-# ------------------------ Add Reference Year ----------------------------------
-# Set the reference year (for calculation of Capital Services only)
-# Some stocks don't last until reference year so just use their max period
-
-flog.info("\nAdding Reference Year.")
-refYear <- params$refPeriod
 
 # Check if any series do not have observations in the refPeriod (e.g. they started afterwards)
 # Remember we stripped out leading zeros
@@ -213,15 +224,6 @@ lastCompleteYear <- unique(gfcf$Period)
 lastCompleteYear <- lastCompleteYear[substr(lastCompleteYear,7,7)==4]
 lastCompleteYear <- max(as.numeric(substr(lastCompleteYear,2,5)))
 
-# Re-referencing deflators
-
-gfcf$year <- substr(gfcf$Period,2,5)
-
-gfcf <- gfcf %>% group_by(Sector,Industry,Asset) %>% mutate(adjustment = (sum(PriceIndex[as.numeric(year)==substr(refPeriod,2,5)]))/4)
-gfcf$PriceIndex <- gfcf$PriceIndex/gfcf$adjustment
-gfcf$adjustment <- NULL
-gfcf$year <- NULL
-gfcf <- ungroup(gfcf)
 
 # Remove series not required
 
