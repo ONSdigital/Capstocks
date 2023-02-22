@@ -5,7 +5,7 @@ capital stock estimates are calculated and allows users to examine the impacts o
 
 ## Prerequisites 
 
-To produce capital stocks estimates it is necessary to have R installed on your PC, the listed packages, capital stocks R scripts, and a set of [spreadsheet inputs](https://www.ons.gov.uk/releases/introducingthecapitalstocksuserguide).
+To produce capital stocks estimates it is necessary to have R installed on your PC, the listed packages, capital stocks R scripts, and a set of [spreadsheet inputs](https://www.ons.gov.uk/releases/introducingthecapitalstocksuserguide) (with updated [input data for latest publication (23 Jan 2023)](https://www.ons.gov.uk/economy/nationalaccounts/uksectoraccounts/datasets/perpetualinventorymethodpiminputs)).
 
 The capital stocks system is compatible with R ***version 4.2.1*** (2022). Scripts and packages compatible with version 3.4.0 are available [here](https://github.com/ONSdigital/Capstocks_previous).
 
