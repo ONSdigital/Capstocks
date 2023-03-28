@@ -112,6 +112,31 @@ source("miscCapStocksFunctions.R")
 refYear <- substr(refPeriod,2,5)
 refYear <- as.double(refYear)
 
+ref <- filter(toChain, Period == "Y2019Q4")
+#noDataRefCfC <- filter(ref, ConsumptionOfFixedCapitalCP == 0 | ConsumptionOfFixedCapitalPYP == 0 |ConsumptionOfFixedCapitalCP == 0 )
+noDataRefGS <- filter(ref, GrossStockCP ==0 | GrossStockCYP == 0 | GrossStockPYP ==0)
+noDataRefNS <- filter(ref,NetStockCYP == 0 |NetStockPYP == 0 | NetStockCP == 0)
+
+noDataRefGS$concat <- paste0(noDataRefGS$Sector," ", noDataRefGS$Industry," ", noDataRefGS$Asset)
+noDataRefNS$concat <- paste0(noDataRefNS$Sector," ", noDataRefNS$Industry," ", noDataRefNS$Asset)
+noDataRef <- union (noDataRefGS$concat, noDataRefNS$concat)
+
+toChain$concat <- paste0(toChain$Sector, " ", toChain$Industry, " ", toChain$Asset)
+
+noToChain <- filter(toChain, concat %in% noDataRef)
+list_no_data <- unique(noToChain$concat)
+print("The following series were removed because there is no data in the refPeriod")
+print(list_no_data)
+
+noToChain$Year <- substring(noToChain$Period,2,5)
+noToChain$ConsumptionOfFixedCapitalCVM <- NA
+noToChain$NetStockCVM <- NA
+noToChain$GrossStockCVM <- NA
+
+toChain <- filter(toChain, !concat %in% noDataRef)
+
+toChain <- toChain[(!(toChain$GrossStockCP == 0 & toChain$NetStockCP == 0 & toChain$ConsumptionOfFixedCapitalCP ==0 )) ,]
+
 chained <- chainDataSkippingErrors(toChain, benchType = 4, refYear, correct_CVM = TRUE)
 
 ##################################################################################################################################
@@ -133,6 +158,18 @@ if (sum(failures) > 0)
 chainedUnnest <- chained %>% unnest()
 #chainedUnnest <- read_rds("output/chainedUnnest.Rds")
 
+#adding back series with no data in refPeriod
+chainedUnnest <- rbind(chainedUnnest,noToChain)
+chainedUnnest <- select(chainedUnnest, !concat)
+
+#join failed series back as CPs
+errs <- unnest(errs, data)
+errs <- select(errs, !chained)
+errs$ConsumptionOfFixedCapitalCVM <- NA
+errs$NetStockCVM <- NA
+errs$GrossStockCVM <- NA
+errs <- select(errs, !concat)
+chainedUnnest <- rbind(chainedUnnest,errs)
 
 #################################################################################################################################
 #################################################################################################################################
