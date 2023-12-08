@@ -1,7 +1,9 @@
 # Capital stock estimates user guide 
 
 This repository provides users with the ability to produce estimates of capital stock from a set of inputs. This introduces more transparency of how
-capital stock estimates are calculated and allows users to examine the impacts of different assumptions and to forecast future estimates of capital. 
+capital stock estimates are calculated and allows users to examine the impacts of different assumptions and to forecast future estimates of capital.
+
+Coding that allows the production of regional capital estimates for dwellings and transfer costs on non-produced assets will be added later today.
 
 ## Prerequisites 
 
