@@ -7,7 +7,7 @@ capital stock estimates are calculated and allows users to examine the impacts o
 
 To produce capital stocks estimates it is necessary to have R installed on your PC, the listed packages, capital stocks R scripts, and a set of [spreadsheet inputs](https://www.ons.gov.uk/releases/introducingthecapitalstocksuserguide) (with updated [input data for latest publication (23 Jan 2023)](https://www.ons.gov.uk/economy/nationalaccounts/uksectoraccounts/datasets/perpetualinventorymethodpiminputs)).
 
-The code now allows the production of regional capital estimates. Regional gross fixed capital formation (GFCF) estimates of dwellings and transfer costs on non-produced assets are available [here](https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalperpetualinventorymethodpiminputs).
+The code now allows the production of regional capital estimates. Regional gross fixed capital formation (GFCF) estimates of dwellings and transfer costs on non-produced assets from 1997 are available [here](https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalperpetualinventorymethodpiminputs).
 
 The capital stocks system is compatible with R ***version 4.2.1*** (2022). Scripts and packages compatible with version 3.4.0 are available [here](https://github.com/ONSdigital/Capstocks_previous).
 
