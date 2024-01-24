@@ -821,7 +821,8 @@ checkLLCoverage <- function(llfile, toCover, varName){
                     Asset != "ALL")
   indToEx <- mutate(indToEx, Industry = NULL)
   indExpanded <- left_join(mutate(indToEx, join = 1), allInd,
-                           by = "join") %>% mutate(join = NULL)
+                           by = "join", relationship =
+                             "many-to-many") %>% mutate(join = NULL)
   indExpanded <- indExpanded %>% semi_join(toCover, by = allKeys) %>%
     anti_join(specRows, by = allKeys) %>% select(Sector,
                                                  Industry, Asset, everything())
@@ -829,7 +830,8 @@ checkLLCoverage <- function(llfile, toCover, varName){
                     Asset != "ALL")
   secToEx <- mutate(secToEx, Sector = NULL)
   secExpanded <- left_join(mutate(secToEx, join = 1), allSec,
-                           by = "join") %>% mutate(join = NULL)
+                           by = "join", relationship =
+                             "many-to-many") %>% mutate(join = NULL)
   secExpanded <- secExpanded %>% semi_join(toCover, by = allKeys) %>%
     anti_join(specRows, by = allKeys) %>% select(Sector,
                                                  Industry, Asset, everything())

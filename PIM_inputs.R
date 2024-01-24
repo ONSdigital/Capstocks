@@ -1,9 +1,8 @@
-
 # If input directory not set use current wd
 
-if (inputDir==("J:/Annual round/Userguide_test")){
+if (inputDir=="NA" | inputDir==""){
   
-  inputDir <- getwd("D:/Current code")
+  inputDir <- getwd()
   
 }
 
@@ -30,7 +29,7 @@ outputDir <- params$outputDir
 
 # If output directory not set use current wd
 
-if (is.na(outputDir)){
+if (is.na(outputDir) | outputDir=="NA" | outputDir==""){
   
   outputDir <- getwd()
   
@@ -47,8 +46,6 @@ if (substr(outputDir,nchar(outputDir),nchar(outputDir))!="/"){
 gfcf <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
                   sheet = 'GFCF_CP')
 
-
-
 # add columns
 
 AverageLifeLengths <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'AverageLifeLengths', col_types = "text")
@@ -58,7 +55,6 @@ CoVs <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'CoVs', col_ty
 Min <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'Min', col_types = "text")
 
 Max <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'Max', col_types = "text")
-
 
 add_columns <- function(dat){
   
@@ -81,18 +77,25 @@ CoVs <- add_columns(CoVs)
 Min <- add_columns(Min)
 Max <- add_columns(Max)
 
-
-gfcf <- gather(gfcf, Period, gfcfCP, 4:ncol(gfcf))
-
+if ('Region' %in% names(gfcf)){
+  
+  gfcf <- gfcf %>% gather(Period, gfcfCP, -Sector, -Industry, -Asset, -Region) %>%
+    mutate(gfcfCP = as.numeric(gfcfCP))
+  
+} else {
+  
+  gfcf <- gather(gfcf, Period, gfcfCP, 4:ncol(gfcf))
+  
+  
+}
 
 #Add rows
 
 Other <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),sheet = 'Other', col_types = "text")
 
-
 add_rows <- function(dat){
 
-  if (length(setdiff(gfcf$Period, dat$Period)>0)){
+  if (length(setdiff(gfcf$Period, dat$Period))>0){
 
     for (d in setdiff(gfcf$Period, dat$Period)){
 
@@ -107,6 +110,7 @@ add_rows <- function(dat){
 }
 
 Other <- add_rows(Other)
+
 ######################################################################
 
 deflators <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
@@ -114,13 +118,26 @@ deflators <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
 deflators <- gather(deflators, Period, PriceIndex, 4:ncol(deflators))
 gfcf <- left_join(gfcf, deflators, by = c('Sector', 'Industry', 'Asset', 'Period'))
 
-gfcf <- gfcf %>%
-  group_by(Sector, Industry, Asset) %>%
-  # Strip out leading zeros (no need to process these)
-  slice(pmin(which(Period == refPeriod), which.max(gfcfCP != 0)):n()) %>%
-  ungroup()
+if ('Region' %in% names(gfcf)){
+  
+  gfcf <- gfcf %>%
+    group_by(Sector, Industry, Asset, Region) %>%
+    # Strip out leading zeros (no need to process these)
+    slice(pmin(which(Period == refPeriod), which.max(gfcfCP != 0)):n()) %>%
+    ungroup()
+  
+} else {
+  
+  gfcf <- gfcf %>%
+    group_by(Sector, Industry, Asset) %>%
+    # Strip out leading zeros (no need to process these)
+    slice(pmin(which(Period == refPeriod), which.max(gfcfCP != 0)):n()) %>%
+    ungroup() 
+  
+}
 
 # Read in asset lives and combine
+
 source("miscCapStocksFunctions.R")
 gfcf <- joinLifeLengths(gfcf, AverageLifeLengths, CoVs, Min, Max)
 
@@ -133,13 +150,23 @@ gfcf$Min <- as.numeric(gfcf$Min)
 
 adjustments <- read_xlsx(path = paste0(inputDir,"piminput.xlsx"),
                          sheet = 'OCIV')
-gfcf <- left_join(gfcf, adjustments, by = c("Sector", "Industry", "Asset", "Period"))
 
-# Fill out K-values with zeros
+if (nrow(adjustments)>0){
 
-naToZero <- function(x) dplyr::if_else(is.na(x), 0, x)
-gfcf <- mutate_at(gfcf, .vars = c("K1CP", "K3CP", "K4CP", "K5CP", "K61CP", "K62CP"),
+  gfcf <- left_join(gfcf, adjustments, by = c("Sector", "Industry", "Asset", "Period"))
+
+  # Fill out K-values with zeros
+
+  naToZero <- function(x) dplyr::if_else(is.na(x), 0, x)
+  gfcf <- mutate_at(gfcf, .vars = c("K1CP", "K3CP", "K4CP", "K5CP", "K61CP", "K62CP"),
                   .funs = naToZero)
+  
+} else {
+  
+  gfcf <- gfcf %>% mutate(K1CP = 0, K3CP = 0, K4CP = 0, 
+                          K5CP = 0, K61CP = 0, K62CP = 0)
+  
+}
 
 # Add other parameters
 
@@ -166,7 +193,16 @@ refYear <- params$refPeriod
 
 gfcf$year <- substr(gfcf$Period,2,5)
 
-gfcf <- gfcf %>% group_by(Sector,Industry,Asset) %>% mutate(adjustment = (sum(PriceIndex[as.numeric(year)==substr(refPeriod,2,5)]))/4)
+if ('Region' %in% names(gfcf)){
+  
+  gfcf <- gfcf %>% group_by(Sector,Industry,Asset,Region) %>% mutate(adjustment = (sum(PriceIndex[as.numeric(year)==substr(refPeriod,2,5)])))
+  
+} else {
+  
+  gfcf <- gfcf %>% group_by(Sector,Industry,Asset) %>% mutate(adjustment = (sum(PriceIndex[as.numeric(year)==substr(refPeriod,2,5)]))/4)
+  
+}
+
 gfcf$PriceIndex <- gfcf$PriceIndex/gfcf$adjustment
 gfcf$adjustment <- NULL
 gfcf$year <- NULL
@@ -174,12 +210,25 @@ gfcf <- ungroup(gfcf)
 
 # -------------------- Nest Series Ready for PIM -------------------------------
 
-inputData <- gfcf %>%
-  rename(Vintage = Period) %>%   # PIM refers to Periods as "Vintage"
-  group_by(Sector, Industry, Asset) %>%
-  # For each series, roll-up all columns into a single list-column called "data"
-  nest() %>%
-  ungroup()
+if ('Region' %in% names(gfcf)){
+
+  inputData <- gfcf %>%
+    rename(Vintage = Period) %>%   # PIM refers to Periods as "Vintage"
+    group_by(Sector, Industry, Asset, Region) %>%
+    # For each series, roll-up all columns into a single list-column called "data"
+    nest() %>%
+    ungroup()
+  
+} else {
+  
+  inputData <- gfcf %>%
+    rename(Vintage = Period) %>%   # PIM refers to Periods as "Vintage"
+    group_by(Sector, Industry, Asset) %>%
+    # For each series, roll-up all columns into a single list-column called "data"
+    nest() %>%
+    ungroup()
+  
+}
 
 # Profiles
 
@@ -220,10 +269,17 @@ flog.info(paste("Series count:", nrow(getSeries(inputData))))
 
 # Calculate last complete year
 
-lastCompleteYear <- unique(gfcf$Period)
-lastCompleteYear <- lastCompleteYear[substr(lastCompleteYear,7,7)==4]
-lastCompleteYear <- max(as.numeric(substr(lastCompleteYear,2,5)))
-
+if (nchar(gfcf$Period)[1]==5){
+  
+  lastCompleteYear <- max(as.numeric(substr(gfcf$Period,2,5)))
+  
+} else {
+  
+  lastCompleteYear <- unique(gfcf$Period)
+  lastCompleteYear <- lastCompleteYear[substr(lastCompleteYear,7,7)==4]
+  lastCompleteYear <- max(as.numeric(substr(lastCompleteYear,2,5)))
+  
+}
 
 # Remove series not required
 

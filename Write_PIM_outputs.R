@@ -12,7 +12,16 @@ if (!exists("out")) stop("No prepared out data.frame present. Did you run the pr
 pimOutput <- out %>% unnest(cols = c(data))
 
 # Save selected variables for output to CSV
-baseVariables <- c("Sector", "Industry", "Asset", "Period")
+
+if ('Region' %in% names(out)){
+  
+  baseVariables <- c("Sector", "Industry", "Asset", "Period", "Region")
+  
+} else {
+  
+  baseVariables <- c("Sector", "Industry", "Asset", "Period")
+  
+}
 
 # Define the variables required for output
 requiredVariables <- c("GrossStockCVM", "NetStockCVM", "ConsumptionOfFixedCapitalCVM", #ProductiveStockCVM",

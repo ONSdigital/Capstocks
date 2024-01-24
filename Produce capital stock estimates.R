@@ -82,14 +82,20 @@ source("./Run_pim.R")
 
 source("./Write_PIM_outputs.R")
 
+# Chaining currently only works for UK GFCF estimates
+
+if (!'Region' %in% names(out)){
+  
   # Unchain results and perform reclassifications
-
-source("./Unchain.R")
-
+  
+  source("./Unchain.R")
+  
   # Aggregate
-
-source("./Aggregate.R")
-
-# Chain & ANNUALISATION
-
-source("./Chain.R")
+  
+  source("./Aggregate.R")
+  
+  # Chain & ANNUALISATION
+  
+  source("./Chain.R")
+  
+}

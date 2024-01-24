@@ -45,9 +45,20 @@ out <- out %>%
   select(-(Average:K62CVM), -gfcfCP)
 
 # Re-nest the output for onward processing
-out <- out %>% 
-  group_by(Sector, Industry, Asset) %>%
-  nest()  # unchainAll expects data to be in "data" list-column
+
+if ('Region' %in% names(out)){
+  
+  out <- out %>% 
+    group_by(Sector, Industry, Asset, Region) %>%
+    nest()  # unchainAll expects data to be in "data" list-column
+  
+} else {
+  
+  out <- out %>% 
+    group_by(Sector, Industry, Asset) %>%
+    nest()  # unchainAll expects data to be in "data" list-column
+  
+}
 
 # Save entire output dataset
 
