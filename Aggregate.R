@@ -19,8 +19,28 @@ source("bespokeDataCalculations.R")
 
 # UNNEST DATA
 
+# Extend COFOG splits & add columns
+indSplit <- read_excel(paste0(inputDir, "splitcofog.xlsx"), sheet = "split_COFOG", col_types = "text")
+
+add_columns <- function(dat){
+
+  if (length(setdiff(names(AverageLifeLengths), names(dat))>0)){
+
+    for (d in setdiff(names(AverageLifeLengths), names(dat))){
+
+      dat[d] <- dat[ncol(dat)]
+
+    }
+
+  }
+
+  return(dat)
+
+}
+
+indSplit <- add_columns(indSplit)
+
 # Split relevant S.13 COFOG's
-indSplit <- read_excel(paste0(inputDir, "splitcofog.xlsx"), sheet = "split_COFOG", col_types = "text") # PULL IN THE SPLITS FROM THE SPREADSHEET
 toSplit <- unique(paste0(indSplit$Sector,indSplit$Industry))
 indSplit <- indSplit %>% gather(key = 'Period', value = "Perc", 4:ncol(indSplit))
 indSplit$Perc <- as.numeric(indSplit$Perc)
